@@ -5,14 +5,9 @@ const { CreateTodo, UpdateTodo } = require("./types");
 const todoModel = require("./db");
 app.use(express.json());
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
-});
-
-
 app.post("/todo", async function (req, res) {
    const createpayload = req.body;
-   const validatepayload = CreateTodo.safeParseparse(createpayload);
+   const validatepayload = CreateTodo.safeParse(createpayload);
 
    if(!validatepayload.success){
     return res.status(411).json({error: validatepayload.error});
@@ -32,19 +27,26 @@ app.get("/todos", async function (req, res) {
   return res.status(200).json({todos});
 });
 
-app.put("/complete/:id", async function (req, res) {
+app.put("/complete", async function (req, res) {
     const updatepayload = req.body;
-    const validatepayload = UpdateTodo.safeParseparse(updatepayload);
+    const validatepayload = UpdateTodo.safeParse(updatepayload);
  
     if(!validatepayload.success){
      return res.status(411).json({error: validatepayload.error});
     }
 
-    const todo = await todoModel.findByIdAndUpdate(req.params.id, {completed: true});
-    return res.status(200).json({message: "Todo completed successfully"});
-
+    const todo = await todoModel.findByIdAndUpdate(
+        updatepayload.id,
+        { completed: true },
+        { new: true }  // This option returns the updated document
+    );
+    
+    if (!todo) {
+        return res.status(404).json({ message: "Todo not found" });
+    }
+    
+    return res.status(200).json({ message: "Todo completed successfully", todo });
 });
-
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
